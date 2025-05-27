@@ -1,0 +1,86 @@
+import streamlit as st
+from googleapiclient.discovery import build
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from wordcloud import WordCloud
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+import re
+from collections import defaultdict
+
+st.set_page_config(page_title="YouTube Comment Analyzer")
+st.title("📺 YouTube Comment Analyzer")
+
+api_key = "YOUR_API_KEY"  # Replace with your API key
+youtube = build('youtube', 'v3', developerKey=api_key)
+
+def get_video_comments(video_id, max_comments=100):
+    comments = []
+    next_page_token = None
+    while len(comments) < max_comments:
+        request = youtube.commentThreads().list(
+            part='snippet',
+            videoId=video_id,
+            textFormat='plainText',
+            maxResults=100,
+            pageToken=next_page_token
+        )
+        response = request.execute()
+        for item in response['items']:
+            comment = item['snippet']['topLevelComment']['snippet']['textDisplay']
+            comments.append(comment)
+        next_page_token = response.get('nextPageToken')
+        if not next_page_token:
+            break
+    return comments[:max_comments]
+
+analyzer = SentimentIntensityAnalyzer()
+
+def analyze_sentiment(comment):
+    return analyzer.polarity_scores(comment)['compound']
+
+def sentiment_label(score):
+    if score >= 0.05:
+        return 'Positive'
+    elif score <= -0.05:
+        return 'Negative'
+    else:
+        return 'Neutral'
+
+def detect_controversial_keywords(df):
+    word_scores = defaultdict(list)
+    for _, row in df.iterrows():
+        words = re.findall(r'\w+', row['Comment'].lower())
+        for word in words:
+            word_scores[word].append(row['Sentiment Score'])
+    controversy = {word: np.std(scores) for word, scores in word_scores.items() if len(scores) > 5}
+    sorted_controversy = sorted(controversy.items(), key=lambda x: x[1], reverse=True)[:10]
+    return pd.DataFrame(sorted_controversy, columns=["Keyword", "Sentiment StdDev"])
+
+video_id = st.text_input("Enter YouTube Video ID:")
+max_comments = st.slider("Number of Comments", 50, 500, 200)
+
+if st.button("Analyze"):
+    with st.spinner("Fetching comments..."):
+        comments = get_video_comments(video_id, max_comments)
+        df = pd.DataFrame(comments, columns=["Comment"])
+        df["Sentiment Score"] = df["Comment"].apply(analyze_sentiment)
+        df["Sentiment"] = df["Sentiment Score"].apply(sentiment_label)
+
+        st.subheader("📊 Sentiment Distribution")
+        sentiment_counts = df["Sentiment"].value_counts()
+        st.bar_chart(sentiment_counts)
+
+        st.subheader("☁️ WordCloud")
+        text = " ".join(df["Comment"])
+        wordcloud = WordCloud(width=800, height=400, background_color="white").generate(text)
+        st.image(wordcloud.to_array())
+
+        st.subheader("⚠️ Controversial Keywords")
+        controversy_df = detect_controversial_keywords(df)
+        st.dataframe(controversy_df)
+
+        st.subheader("💬 Sample Comments")
+        st.write(df.head(10))
+
+        st.download_button("Download CSV", df.to_csv(index=False), "comments_analysis.csv")

@@ -1,0 +1,16 @@
+from collections import defaultdict
+import numpy as np
+import re
+
+word_scores = defaultdict(list)
+
+for index, row in df.iterrows():
+    words = re.findall(r'\w+', row['Comment'].lower())
+    for word in words:
+        word_scores[word].append(row['Sentiment Score'])
+
+controversy = {word: np.std(scores) for word, scores in word_scores.items() if len(scores) > 5}
+sorted_controversy = sorted(controversy.items(), key=lambda x: x[1], reverse=True)[:10]
+
+controversial_df = pd.DataFrame(sorted_controversy, columns=["Keyword", "Sentiment StdDev"])
+controversial_df

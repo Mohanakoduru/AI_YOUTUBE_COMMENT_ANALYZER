@@ -1,0 +1,35 @@
+from googleapiclient.discovery import build
+
+api_key = 'AIzaSyA-DnsB9OuC2NyOv2VTRt5XlsPkf-qaxUk'  # Replace with your API key
+youtube = build('youtube', 'v3', developerKey=api_key)
+
+def get_video_comments(video_id, max_comments=100):
+    comments = []
+    next_page_token = None
+
+    while len(comments) < max_comments:
+        request = youtube.commentThreads().list(
+            part='snippet',
+            videoId=video_id,
+            textFormat='plainText',
+            maxResults=100,
+            pageToken=next_page_token
+        )
+        response = request.execute()
+
+        for item in response['items']:
+            comment = item['snippet']['topLevelComment']['snippet']['textDisplay']
+            comments.append(comment)
+
+        next_page_token = response.get('nextPageToken')
+        if not next_page_token:
+            break
+
+    return comments[:max_comments]
+
+# Replace this with a real video ID (from a public YouTube video)
+comments = get_video_comments("ajzQj7bjSWE", max_comments=20)
+
+# ✅ Show the output
+for i, comment in enumerate(comments, start=1):
+    print(f"{i}. {comment}")

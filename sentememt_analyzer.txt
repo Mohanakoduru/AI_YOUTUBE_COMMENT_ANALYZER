@@ -1,0 +1,22 @@
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+import pandas as pd
+
+analyzer = SentimentIntensityAnalyzer()
+
+def analyze_sentiment(comment):
+    return analyzer.polarity_scores(comment)['compound']
+
+def sentiment_label(score):
+    if score >= 0.05:
+        return 'Positive'
+    elif score <= -0.05:
+        return 'Negative'
+    else:
+        return 'Neutral'
+
+# Apply to DataFrame
+df = pd.DataFrame(comments, columns=["Comment"])
+df["Sentiment Score"] = df["Comment"].apply(analyze_sentiment)
+df["Sentiment"] = df["Sentiment Score"].apply(sentiment_label)
+
+df.head()

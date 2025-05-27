@@ -1,0 +1,11 @@
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+
+all_text = " ".join(df["Comment"].tolist())
+wordcloud = WordCloud(width=800, height=400, background_color='white').generate(all_text)
+
+plt.figure(figsize=(12, 6))
+plt.imshow(wordcloud, interpolation='bilinear')
+plt.axis('off')
+plt.title("Top Keywords in Comments")
+plt.show()

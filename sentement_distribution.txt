@@ -1,0 +1,10 @@
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Bar chart of sentiments
+sentiment_counts = df["Sentiment"].value_counts()
+sns.barplot(x=sentiment_counts.index, y=sentiment_counts.values)
+plt.title("Sentiment Distribution")
+plt.xlabel("Sentiment")
+plt.ylabel("Number of Comments")
+plt.show()
