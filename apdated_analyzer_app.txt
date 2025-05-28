@@ -12,7 +12,7 @@ st.set_page_config(page_title="YouTube Comment Analyzer")
 st.title("📺 YouTube Comment Analyzer")
 
 # 🔑 Replace this with your own API key
-api_key = "AIzaSyA-DnsB9OuC2NyOv2VTRt5XlsPkf-qaxUk"
+api_key = ""
 youtube = build('youtube', 'v3', developerKey=api_key)
 
 # 🔄 Get comments with like count
